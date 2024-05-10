@@ -1,4 +1,4 @@
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useRef, useState, useEffect } from "react";
 import {
   getDownloadURL,
@@ -7,21 +7,59 @@ import {
   uploadBytesResumable,
 } from "firebase/storage";
 import { app } from "../firebase";
+import {
+  updateUserFailure,
+  updateUserStart,
+  updateUserSuccess,
+} from "../redux/user/userSlice";
 
 export default function Profile() {
-  const { currentUser } = useSelector(state => state.user);
+  const { currentUser, loading, error } = useSelector(state => state.user);
   const fileRef = useRef(null);
   const [file, setFile] = useState(undefined);
   const [filePercentage, setFilePercentage] = useState(0);
   const [fileUploadError, setFileUploadError] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
   const [formData, setFormdata] = useState({});
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (file) {
       handleFileUpload();
     }
   }, [file]);
+
+  const handleChange = e => {
+    setFormdata({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    try {
+      dispatch(updateUserStart()); // This will start the loading effect
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        // Corrected comma here
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+      if (data.success === false) {
+        dispatch(updateUserFailure(data.message));
+        return;
+      }
+
+      dispatch(updateUserSuccess(data));
+      setUpdateSuccess(true)
+    } catch (error) {
+      dispatch(updateUserFailure(error.message));
+    }
+  };
 
   const handleFileUpload = () => {
     const storage = getStorage(app);
@@ -51,7 +89,7 @@ export default function Profile() {
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl text-center my-8 font-semibold">Profile</h1>
-      <form className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           onChange={e => setFile(e.target.files[0])}
           type="file"
@@ -78,35 +116,44 @@ export default function Profile() {
           ) : filePercentage > 0 && filePercentage < 100 ? (
             <span className="text-blue-700">{`Image uploaded ${filePercentage}%`}</span>
           ) : filePercentage === 100 ? (
-            <span className="text-green-700">Image successfully uploaded</span>
+            <span className="text-green-700">
+              Image successfully uploaded, Press UPDATE to save
+            </span>
           ) : null}
         </p>
 
         <input
           type="text"
           placeholder="Username"
+          defaultValue={currentUser.username}
           className="border p-3 rounded-lg "
           name="username"
           id="username"
+          onChange={handleChange}
         />
 
         <input
           type="email"
           placeholder="Email"
+          defaultValue={currentUser.email}
           className="border p-3 rounded-lg "
           name="email"
           id="email"
+          onChange={handleChange}
         />
         <input
           type="password"
           placeholder="Password"
+          onChange={handleChange}
           className="border p-3 rounded-lg "
           name="password"
           id="password"
         />
 
-        <button className="bg-slate-700 text-white rounded-lg uppercase p-3 hover:opacity-95 disabled:opacity-80">
-          Update
+        <button
+          disabled={loading}
+          className="bg-slate-700 text-white rounded-lg uppercase p-3 hover:opacity-95 disabled:opacity-80">
+          {loading ? "Loading.. " : "UPDATE"}
         </button>
       </form>
 
@@ -114,6 +161,11 @@ export default function Profile() {
         <span className="text-red-700 cursor-pointer ">Delete Account</span>
         <span className="text-red-700 cursor-pointer ">Sign Out</span>
       </div>
+
+      <p className="text-red-700 mt-5">{error ? error : ""}</p>
+
+      <p className="text-green-700 mt-5">{updateSuccess ? 'User is updated successfully' : ""}</p>
+
     </div>
   );
 }
