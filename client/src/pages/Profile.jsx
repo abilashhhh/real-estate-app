@@ -1,5 +1,6 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useRef, useState, useEffect } from "react";
+import {Link} from 'react-router-dom'
 import {
   getDownloadURL,
   getStorage,
@@ -26,7 +27,7 @@ export default function Profile() {
   const [filePercentage, setFilePercentage] = useState(0);
   const [fileUploadError, setFileUploadError] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
- 
+
   const [formData, setFormdata] = useState({});
 
   const dispatch = useDispatch();
@@ -40,7 +41,6 @@ export default function Profile() {
   const handleChange = e => {
     setFormdata({ ...formData, [e.target.id]: e.target.value });
   };
-
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -68,7 +68,6 @@ export default function Profile() {
     }
   };
 
-
   const handleFileUpload = () => {
     const storage = getStorage(app);
     const fileName = new Date().getTime() + file.name;
@@ -94,14 +93,13 @@ export default function Profile() {
     );
   };
 
-
   const handleDeleteUser = async () => {
     try {
-      dispatch(deleteUserStart())
-      const res = await fetch(`/api/user/delete/${currentUser._id}` , {
-        method: 'DELETE',        
+      dispatch(deleteUserStart());
+      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+        method: "DELETE",
       });
-  
+
       const data = await res.json();
       if (data.success === false) {
         dispatch(deleteUserFailure(data.message));
@@ -109,14 +107,14 @@ export default function Profile() {
       }
       dispatch(deleteUserSuccess(data));
     } catch (error) {
-      dispatch(deleteUserFailure(error.message))
+      dispatch(deleteUserFailure(error.message));
     }
-  }
+  };
 
   const handleSignOut = async () => {
     try {
-      dispatch(signOutUserStart())
-      const res =  await fetch(`/api/auth/signout`)
+      dispatch(signOutUserStart());
+      const res = await fetch(`/api/auth/signout`);
       // as default method will be 'get' we dont want to specify that
       const data = await res.json();
       if (data.success === false) {
@@ -125,10 +123,9 @@ export default function Profile() {
       }
       dispatch(signOutUserSuccess(data));
     } catch (error) {
-      dispatch(signOutUserFailure(error.message))
+      dispatch(signOutUserFailure(error.message));
     }
-  }
-  
+  };
 
   return (
     <div className="p-3 max-w-lg mx-auto">
@@ -199,6 +196,11 @@ export default function Profile() {
           className="bg-slate-700 text-white rounded-lg uppercase p-3 hover:opacity-95 disabled:opacity-80">
           {loading ? "Loading.. " : "UPDATE"}
         </button>
+
+<Link  className="bg-green-700 text-white text-center rounded-lg uppercase p-3 hover:opacity-95 disabled:opacity-80" to={'/create-listing'} >
+  Create Listing
+</Link>
+
       </form>
 
       <div className="flex justify-between mt-5">
@@ -207,13 +209,12 @@ export default function Profile() {
           className="text-red-700 cursor-pointer ">
           Delete Account
         </span>
-        <span 
-        onClick={handleSignOut}
-        className="text-red-700 cursor-pointer ">Sign Out</span>
+        <span onClick={handleSignOut} className="text-red-700 cursor-pointer ">
+          Sign Out
+        </span>
       </div>
 
       <p className="text-red-700 mt-5">{error ? error : ""}</p>
- 
 
       <p className="text-green-700 mt-5">
         {updateSuccess ? "User is updated successfully" : ""}
