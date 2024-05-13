@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-const router = express.Router()
+const   router = express.Router()
 
 import { createListing } from "../controllers/listing.controller.js";
 
